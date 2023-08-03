@@ -1,10 +1,12 @@
 import { useState } from "react";
+import styled from "@emotion/styled";
+import { ThemeProvider } from "@emotion/react";
+import dayjs from "dayjs";
+
 import { ReactComponent as AirFlowIcon } from "./images/airFlow.svg";
 import { ReactComponent as DayCloudyIcon } from "./images/day-cloudy.svg";
 import { ReactComponent as RainIcon } from "./images/rain.svg";
 import { ReactComponent as RefreshIcon } from "./images/refresh.svg";
-import styled from "@emotion/styled";
-import { ThemeProvider } from "@emotion/react";
 
 // 定義深淺色主題配色
 const theme = {
@@ -140,6 +142,16 @@ const Theme = styled.div`
 const App = () => {
   const [currentTheme, setCurrentTheme] = useState("light");
 
+  //定義會使用到的資料狀態
+  const [currentWeather, setCurrentWeather] = useState({
+    observationTime: "2020-12-12 22:10:00",
+    locationName: "臺北市",
+    description: "多雲時晴",
+    windSpeed: 3.6,
+    temperature: 32.1,
+    rainPossibility: 60,
+  });
+
   const handleToggleTheme = () => {
     const newTheme = currentTheme === "light" ? "dark" : "light";
     setCurrentTheme(newTheme);
@@ -149,27 +161,32 @@ const App = () => {
     <ThemeProvider theme={theme[currentTheme]}>
       <Container>
         <WeatherCard>
-          <Location>台北市</Location>
-          <Description>多雲時晴</Description>
+          <Location>{currentWeather.locationName}</Location>
+          <Description>{currentWeather.description}</Description>
           <CurrentWeather>
             <Temperature>
-              23 <Celsius>°C</Celsius>
+              {Math.round(currentWeather.temperature)} <Celsius>°C</Celsius>
             </Temperature>
             <DayCloudy />
           </CurrentWeather>
           <AirFlow>
-            <AirFlowIcon /> 23 m/h
+            <AirFlowIcon /> {currentWeather.windSpeed} m/h
           </AirFlow>
           <Rain>
             <RainIcon />
-            48%
+            {currentWeather.rainPossibility}%
           </Rain>
           <Footer>
             <Theme onClick={handleToggleTheme}>
               切換主題為{currentTheme === "light" ? "深色" : "淺色"}模式
             </Theme>
             <Refresh>
-              最後觀測時間：上午 12:03 <RefreshIcon />
+              最後觀測時間：
+              {new Intl.DateTimeFormat("zh-TW", {
+                hour: "numeric",
+                minute: "numeric",
+              }).format(dayjs(currentWeather.observationTime))}
+              <RefreshIcon />
             </Refresh>
           </Footer>
         </WeatherCard>

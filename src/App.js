@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import styled from "@emotion/styled";
 import { ThemeProvider } from "@emotion/react";
 import dayjs from "dayjs";
@@ -143,6 +143,7 @@ const AUTHORIZATION_KEY = "CWB-EB20F126-AF6D-46A6-AB61-63065FF3DA1C";
 const LOCATION_NAME = "臺北市";
 
 const App = () => {
+  console.log("invoke function component");
   const [currentTheme, setCurrentTheme] = useState("light");
 
   //定義會使用到的資料狀態
@@ -155,13 +156,13 @@ const App = () => {
     rainPossibility: 60,
   });
 
-  const handleClick = () => {
+  const fetchCurrentWeather = () => {
     fetch(
       `https://opendata.cwb.gov.tw/api/v1/rest/datastore/F-D0047-089?Authorization=${AUTHORIZATION_KEY}&locationName=${LOCATION_NAME}&elementName=`
     )
       .then((response) => response.json())
       .then((data) => {
-        console.log("data", data);
+        // console.log("data", data);
 
         //將風速氣溫資料取出
         const locationData = data.records.locations[0].location[0];
@@ -194,9 +195,16 @@ const App = () => {
     setCurrentTheme(newTheme);
   };
 
+  // 更新畫面
+  useEffect(() => {
+    console.log("execute function in useEffect");
+    fetchCurrentWeather();
+  }, []);
+
   return (
     <ThemeProvider theme={theme[currentTheme]}>
       <Container>
+        {console.log("render")}
         <WeatherCard>
           <Location>{currentWeather.locationName}</Location>
           <Description>{currentWeather.description}</Description>
@@ -223,7 +231,7 @@ const App = () => {
                 hour: "numeric",
                 minute: "numeric",
               }).format(dayjs(currentWeather.observationTime))}
-              <RefreshIcon onClick={handleClick} />
+              <RefreshIcon onClick={fetchCurrentWeather} />
             </Refresh>
           </Footer>
         </WeatherCard>

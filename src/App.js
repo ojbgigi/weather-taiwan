@@ -139,6 +139,9 @@ const Theme = styled.div`
   cursor: pointer;
 `;
 
+const AUTHORIZATION_KEY = "CWB-EB20F126-AF6D-46A6-AB61-63065FF3DA1C";
+const LOCATION_NAME = "臺北市";
+
 const App = () => {
   const [currentTheme, setCurrentTheme] = useState("light");
 
@@ -151,6 +154,40 @@ const App = () => {
     temperature: 32.1,
     rainPossibility: 60,
   });
+
+  const handleClick = () => {
+    fetch(
+      `https://opendata.cwb.gov.tw/api/v1/rest/datastore/F-D0047-089?Authorization=${AUTHORIZATION_KEY}&locationName=${LOCATION_NAME}&elementName=`
+    )
+      .then((response) => response.json())
+      .then((data) => {
+        console.log("data", data);
+
+        //將風速氣溫資料取出
+        const locationData = data.records.locations[0].location[0];
+        const weatherElements = locationData.weatherElement.reduce(
+          (neededElements, item) => {
+            if (["T", "WS", "PoP6h", "Wx"].includes(item.elementName)) {
+              neededElements[item.elementName] =
+                item.time[0].elementValue[0].value;
+            }
+            return neededElements;
+          },
+          {}
+        );
+        // console.log("weatherElements", weatherElements);
+
+        //更新資料
+        setCurrentWeather({
+          ...currentWeather,
+          observationTime: locationData.weatherElement[1].time[0].startTime,
+          description: weatherElements.Wx,
+          windSpeed: weatherElements.WS,
+          temperature: weatherElements.T,
+          rainPossibility: weatherElements.PoP6h,
+        });
+      });
+  };
 
   const handleToggleTheme = () => {
     const newTheme = currentTheme === "light" ? "dark" : "light";
@@ -186,7 +223,7 @@ const App = () => {
                 hour: "numeric",
                 minute: "numeric",
               }).format(dayjs(currentWeather.observationTime))}
-              <RefreshIcon />
+              <RefreshIcon onClick={handleClick} />
             </Refresh>
           </Footer>
         </WeatherCard>

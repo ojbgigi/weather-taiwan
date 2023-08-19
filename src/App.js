@@ -7,6 +7,7 @@ import { ReactComponent as AirFlowIcon } from "./images/airFlow.svg";
 import { ReactComponent as DayCloudyIcon } from "./images/day-cloudy.svg";
 import { ReactComponent as RainIcon } from "./images/rain.svg";
 import { ReactComponent as RefreshIcon } from "./images/refresh.svg";
+import { ReactComponent as LoadingIcon } from "./images/loading.svg";
 
 // 定義深淺色主題配色
 const theme = {
@@ -122,11 +123,22 @@ const Refresh = styled.div`
   color: ${({ theme }) => theme.textColor};
   display: flex;
 
+  @keyframes rotate {
+    from {
+      transform: rotate(360deg);
+    }
+    to {
+      transform: rotate(0deg);
+    }
+  }
+
   svg {
     margin-left: 10px;
     width: 15px;
     height: 15px;
     cursor: pointer;
+    animation: rotate infinite 1.5s linear;
+    animation-duration: ${({ isLoading }) => (isLoading ? "1.5s" : "0s")};
   }
 `;
 
@@ -143,7 +155,7 @@ const AUTHORIZATION_KEY = "CWB-EB20F126-AF6D-46A6-AB61-63065FF3DA1C";
 const LOCATION_NAME = "臺北市";
 
 const App = () => {
-  console.log("invoke function component");
+  console.log("--- invoke function component ---");
   const [currentTheme, setCurrentTheme] = useState("light");
 
   //定義會使用到的資料狀態
@@ -154,9 +166,12 @@ const App = () => {
     windSpeed: 3.6,
     temperature: 32.1,
     rainPossibility: 60,
+    isLoading: true,
   });
 
   const fetchCurrentWeather = () => {
+    setCurrentWeather((prevState) => ({ ...prevState, isLoading: true }));
+
     fetch(
       `https://opendata.cwb.gov.tw/api/v1/rest/datastore/F-D0047-089?Authorization=${AUTHORIZATION_KEY}&locationName=${LOCATION_NAME}&elementName=`
     )
@@ -186,6 +201,7 @@ const App = () => {
           windSpeed: weatherElements.WS,
           temperature: weatherElements.T,
           rainPossibility: weatherElements.PoP6h,
+          isLoading: false, //資料拉取完的狀態
         });
       });
   };
@@ -197,41 +213,52 @@ const App = () => {
 
   // 更新畫面
   useEffect(() => {
-    console.log("execute function in useEffect");
+    console.log("--execute function in useEffect--");
     fetchCurrentWeather();
   }, []);
+
+  //解構賦值取值更乾淨
+  const {
+    observationTime,
+    locationName,
+    description,
+    windSpeed,
+    temperature,
+    rainPossibility,
+    isLoading,
+  } = currentWeather;
 
   return (
     <ThemeProvider theme={theme[currentTheme]}>
       <Container>
-        {console.log("render")}
+        {console.log("render, isLoading", isLoading)}
         <WeatherCard>
-          <Location>{currentWeather.locationName}</Location>
-          <Description>{currentWeather.description}</Description>
+          <Location>{locationName}</Location>
+          <Description>{description}</Description>
           <CurrentWeather>
             <Temperature>
-              {Math.round(currentWeather.temperature)} <Celsius>°C</Celsius>
+              {Math.round(temperature)} <Celsius>°C</Celsius>
             </Temperature>
             <DayCloudy />
           </CurrentWeather>
           <AirFlow>
-            <AirFlowIcon /> {currentWeather.windSpeed} m/h
+            <AirFlowIcon /> {windSpeed} m/h
           </AirFlow>
           <Rain>
             <RainIcon />
-            {currentWeather.rainPossibility}%
+            {rainPossibility}%
           </Rain>
           <Footer>
             <Theme onClick={handleToggleTheme}>
               切換主題為{currentTheme === "light" ? "深色" : "淺色"}模式
             </Theme>
-            <Refresh>
+            <Refresh onClick={fetchCurrentWeather} isLoading={isLoading}>
               最後觀測時間：
               {new Intl.DateTimeFormat("zh-TW", {
                 hour: "numeric",
                 minute: "numeric",
-              }).format(dayjs(currentWeather.observationTime))}
-              <RefreshIcon onClick={fetchCurrentWeather} />
+              }).format(dayjs(observationTime))}
+              {isLoading ? <LoadingIcon /> : <RefreshIcon />}
             </Refresh>
           </Footer>
         </WeatherCard>

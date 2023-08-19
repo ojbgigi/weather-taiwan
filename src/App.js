@@ -177,13 +177,6 @@ const fetchWeatherForecast = () => {
         description: `${weatherElements.Wx}，感受${weatherElements.CI}`,
         rainPossibility: weatherElements.PoP,
       };
-
-      //更新資料
-      // setWeatherElement((prevState) => ({
-      //   ...prevState,
-      //   description: `${weatherElements.Wx}，感受${weatherElements.CI}`,
-      //   rainPossibility: weatherElements.PoP,
-      // }));
     });
 };
 
@@ -212,15 +205,6 @@ const fetchCurrentWeather = () => {
         temperature: weatherElements.T,
         isLoading: false, //資料拉取完的狀態
       };
-
-      //更新資料
-      // setWeatherElement((prevState) => ({
-      //   ...prevState,
-      //   observationTime: locationData.weatherElement[1].time[0].startTime,
-      //   windSpeed: weatherElements.WS,
-      //   temperature: weatherElements.T,
-      //   isLoading: false, //資料拉取完的狀態
-      // }));
     });
 };
 
@@ -243,26 +227,28 @@ const App = () => {
     setCurrentTheme(newTheme);
   };
 
+  //把fetchData搬出useEffect
+  const fetchData = async () => {
+    //拉取資料前先把拉取資料狀態改成true
+    setWeatherElement((prevState) => ({ ...prevState, isLoading: true }));
+
+    const [currentWeather, weatherForecast] = await Promise.all([
+      fetchCurrentWeather(),
+      fetchWeatherForecast(),
+    ]);
+
+    //把取得的資料透過物件的解構賦值放入
+    setWeatherElement((prevState) => ({
+      ...prevState,
+      ...currentWeather,
+      ...weatherForecast,
+      isLoading: false,
+    }));
+  };
+
   // 更新畫面
   useEffect(() => {
-    const fetchData = async () => {
-      //拉取資料前先把拉取資料狀態改成true
-      setWeatherElement((prevState) => ({ ...prevState, isLoading: true }));
-
-      const [currentWeather, weatherForecast] = await Promise.all([
-        fetchCurrentWeather(),
-        fetchWeatherForecast(),
-      ]);
-
-      //把取得的資料透過物件的解構賦值放入
-      setWeatherElement((prevState) => ({
-        ...prevState,
-        ...currentWeather,
-        ...weatherForecast,
-        isLoading: false,
-      }));
-    };
-
+    console.log("execute function in useEffect");
     fetchData();
   }, []);
 
@@ -300,13 +286,7 @@ const App = () => {
             <Theme onClick={handleToggleTheme}>
               切換主題為{currentTheme === "light" ? "深色" : "淺色"}模式
             </Theme>
-            <Refresh
-              onClick={() => {
-                fetchCurrentWeather();
-                fetchWeatherForecast();
-              }}
-              isLoading={isLoading}
-            >
+            <Refresh onClick={fetchData} isLoading={isLoading}>
               最後觀測時間：
               {new Intl.DateTimeFormat("zh-TW", {
                 hour: "numeric",
